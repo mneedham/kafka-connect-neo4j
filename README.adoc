@@ -1,0 +1,187 @@
+
+
+Create text file source connector
+```
+curl -X POST http://localhost:8083/connectors \
+  -H 'Content-Type:application/json' \
+  -H 'Accept:application/json' \
+  -d @connectors/connect.source.file.tweets.json
+```
+
+
+Create Neo4j sink connector
+```
+curl -X POST http://localhost:8083/connectors \
+  -H 'Content-Type:application/json' \
+  -H 'Accept:application/json' \
+  -d @connectors/connect.sink.string-json.neo4j.json
+```
+
+Delete connector
+
+```
+curl -X DELETE http://localhost:8083/connectors/Neo4jSinkConnectorJSON   -H 'Content-Type:application/json'   -H 'Accept:application/json'
+curl -X DELETE http://localhost:8083/connectors/connect.source.file.tweets   -H 'Content-Type:application/json'   -H 'Accept:application/json'
+```
+
+```
+CREATE STREAM tweets(id varchar, tweet varchar, hashtags ARRAY<varchar>, date varchar, username varchar, name varchar)
+WITH(KAFKA_TOPIC='tweets', value_format='json');
+```
+
+connect-kc         | [2019-05-24 16:01:29,499] ERROR WorkerSinkTask{id=Neo4jSinkConnectorJSON-0} Task threw an uncaught and unrecoverable exception. Task is being killed and will not recover until manually restarted. (org.apache.kafka.connect.runtime.WorkerSinkTask)
+connect-kc         | org.apache.kafka.connect.errors.DataException: Only Schema (org.apache.kafka.connect.data.Struct) or Schema less (java.util.Map) are supported. java.lang.String is not a supported type.
+connect-kc         | 	at com.github.jcustenborder.kafka.connect.utils.data.AbstractConverter.convert(AbstractConverter.java:83)
+connect-kc         | 	at streams.kafka.connect.sink.Neo4jSinkTask$put$1.invokeSuspend(Neo4jSinkTask.kt:49)
+connect-kc         | 	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:32)
+connect-kc         | 	at kotlinx.coroutines.DispatchedTask$DefaultImpls.run(Dispatched.kt:235)
+connect-kc         | 	at kotlinx.coroutines.DispatchedContinuation.run(Dispatched.kt:81)
+connect-kc         | 	at kotlinx.coroutines.scheduling.Task.run(Tasks.kt:94)
+connect-kc         | 	at kotlinx.coroutines.scheduling.CoroutineScheduler.runSafely(CoroutineScheduler.kt:586)
+connect-kc         | 	at kotlinx.coroutines.scheduling.CoroutineScheduler.access$runSafely(CoroutineScheduler.kt:60)
+connect-kc         | 	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.run(CoroutineScheduler.kt:732)
+connect-kc         | [2019-05-24 16:01:29,500] ERROR WorkerSinkTask{id=Neo4jSinkConnectorJSON-0} Task threw an uncaught and unrecoverable exception (org.apache.kafka.connect.runtime.WorkerTask)
+connect-kc         | org.apache.kafka.connect.errors.ConnectException: Exiting WorkerSinkTask due to unrecoverable exception.
+connect-kc         | 	at org.apache.kafka.connect.runtime.WorkerSinkTask.deliverMessages(WorkerSinkTask.java:587)
+connect-kc         | 	at org.apache.kafka.connect.runtime.WorkerSinkTask.poll(WorkerSinkTask.java:323)
+connect-kc         | 	at org.apache.kafka.connect.runtime.WorkerSinkTask.iteration(WorkerSinkTask.java:226)
+connect-kc         | 	at org.apache.kafka.connect.runtime.WorkerSinkTask.execute(WorkerSinkTask.java:194)
+connect-kc         | 	at org.apache.kafka.connect.runtime.WorkerTask.doRun(WorkerTask.java:175)
+connect-kc         | 	at org.apache.kafka.connect.runtime.WorkerTask.run(WorkerTask.java:219)
+connect-kc         | 	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:511)
+connect-kc         | 	at java.util.concurrent.FutureTask.run(FutureTask.java:266)
+connect-kc         | 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149)
+connect-kc         | 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+connect-kc         | 	at java.lang.Thread.run(Thread.java:748)
+connect-kc         | Caused by: org.apache.kafka.connect.errors.DataException: Only Schema (org.apache.kafka.connect.data.Struct) or Schema less (java.util.Map) are supported. java.lang.String is not a supported type.
+connect-kc         | 	at com.github.jcustenborder.kafka.connect.utils.data.AbstractConverter.convert(AbstractConverter.java:83)
+connect-kc         | 	at streams.kafka.connect.sink.Neo4jSinkTask$put$1.invokeSuspend(Neo4jSinkTask.kt:49)
+connect-kc         | 	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:32)
+connect-kc         | 	at kotlinx.coroutines.DispatchedTask$DefaultImpls.run(Dispatched.kt:235)
+connect-kc         | 	at kotlinx.coroutines.DispatchedContinuation.run(Dispatched.kt:81)
+connect-kc         | 	at kotlinx.coroutines.scheduling.Task.run(Tasks.kt:94)
+connect-kc         | 	at kotlinx.coroutines.scheduling.CoroutineScheduler.runSafely(CoroutineScheduler.kt:586)
+connect-kc         | 	at kotlinx.coroutines.scheduling.CoroutineScheduler.access$runSafely(CoroutineScheduler.kt:60)
+connect-kc         | 	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.run(CoroutineScheduler.kt:732)
+connect-kc         | [2019-05-24 16:01:29,500] ERROR WorkerSinkTask{id=Neo4jSinkConnectorJSON-0} Task is being killed and will not recover until manually restarted (org.apache.kafka.connect.runtime.WorkerTask)
+
+```
+curl -X POST http://localhost:8083/connectors \
+  -H 'Content-Type:application/json' \
+  -H 'Accept:application/json' \
+  -d @connectors/connect.sink.string-string.neo4j.json
+```
+
+```
+curl -i -X POST -H "Accept:application/json" \
+    -H  "Content-Type:application/json" http://localhost:8083/connectors/ \
+    -d '{
+      "name": "source-file-00",
+      "config": {
+        "connector.class": "org.apache.kafka.connect.file.FileStreamSourceConnector",
+        "tasks.max": "1",
+        "file": "/tmp/docker-connect/tweets.json",
+        "topic": "source-file-00"
+      }
+    }'
+```
+
+```
+curl -i -X POST -H "Accept:application/json" \
+    -H  "Content-Type:application/json" http://localhost:8083/connectors/ \
+    -d '{
+      "name": "source-file-01a",
+      "config": {
+        "connector.class": "org.apache.kafka.connect.file.FileStreamSourceConnector",
+        "tasks.max": "1",
+        "file": "/tmp/docker-connect/tweets.json",
+        "topic": "source-file-01a",
+        "value.converter": "org.apache.kafka.connect.json.JsonConverter"
+      }
+    }'
+```
+
+```
+curl -i -X POST -H "Accept:application/json" \
+    -H  "Content-Type:application/json" http://localhost:8083/connectors/ \
+    -d '{
+      "name": "tweets3",
+      "config": {
+        "connector.class": "org.apache.kafka.connect.file.FileStreamSourceConnector",
+        "tasks.max": "1",
+        "file": "/tmp/docker-connect/tweets.json",
+        "topic": "tweets3",
+        "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+        "value.converter.schemas.enable": "false"
+        }
+    }'
+```
+
+
+```
+kafkacat -b localhost:9092 -t tweets3 -C
+```
+
+```
+curl -X POST http://localhost:8083/connectors \
+  -H 'Content-Type:application/json' \
+  -H 'Accept:application/json' \
+  -d @connectors/connect.sink.string-json.neo4j.json
+```
+
+```
+curl -i -X POST -H "Accept:application/json" \
+    -H  "Content-Type:application/json" http://localhost:8083/connectors/ \
+    -d '{
+      "name": "tweets4",
+      "config": {
+        "connector.class": "org.apache.kafka.connect.file.FileStreamSourceConnector",
+        "tasks.max": "1",
+        "file": "/tmp/docker-connect/tweets.json",
+        "topic": "tweets4",
+        "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+        "value.converter.schemas.enable": "true"
+        }
+    }'
+```
+
+
+```
+kafkacat -b localhost:9092 -t tweets4 -C
+```
+
+```
+curl -i -X POST http://localhost:8083/connectors \
+  -H 'Content-Type:application/json' \
+  -H 'Accept:application/json' \
+  -d @connectors/connect.sink.string-string.neo4j.json
+```
+
+
+```
+curl -i -X POST -H "Accept:application/json" \
+    -H  "Content-Type:application/json" http://localhost:8083/connectors/ \
+    -d '{
+      "name": "tweets6",
+      "config": {
+        "connector.class": "org.apache.kafka.connect.file.FileStreamSourceConnector",
+        "tasks.max": "1",
+        "file": "/tmp/docker-connect/tweets.json",
+        "topic": "tweets6",
+        "value.converter": "org.apache.kafka.connect.storage.StringConverter",
+        "value.converter.schemas.enable": "true"
+        }
+    }'
+```
+
+
+```
+kafkacat -b localhost:9092 -t tweets6 -C
+```
+
+```
+curl -i -X POST http://localhost:8083/connectors \
+  -H 'Content-Type:application/json' \
+  -H 'Accept:application/json' \
+  -d @connectors/connect.sink.string-string.neo4j.json
+```
