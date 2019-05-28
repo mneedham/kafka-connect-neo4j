@@ -14,7 +14,7 @@ services:
     environment:
       NEO4J_AUTH: "neo4j/neo"
       NEO4J_dbms_memory_heap_max__size: 8G
-      NEO4J_dbms_security_procedures_unrestricted: "apoc.*"
+      NEO4J_dbms_security_procedures_unrestricted: "apoc.*, algo.*"
       NEO4J_kafka_auto_offset_reset: earliest
       NEO4J_kafka_group_id: neo4j
       NEO4J_kafka_zookeeper_connect: zookeeper:2181
