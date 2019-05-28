@@ -1,126 +1,97 @@
+= Kafka Connect - Neo4j
+
+== Launch Kafka Cluster + Neo4j
+
+[source, bash]
+----
+docker-compose up
+----
+
+== Dependencies
+
+[source, bash]
+----
+pip install --upgrade -e git+https://github.com/twintproject/twint.git@origin/master#egg=twint
+pip install confluent-kafka[avro]
+----
+
+== Loading Data into Kafka
+
+[source, python]
+----
+import twint
+import sys
+import json
+
+from confluent_kafka import avro
+from confluent_kafka.avro import AvroProducer
+
+value_schema_str = """
+{
+   "namespace": "my.test",
+   "name": "value",
+   "type": "record",
+   "fields" : [
+         { "name": "id",        "type": "long" },
+         { "name": "tweet",     "type": "string" },
+         { "name": "datetime",  "type": "long" },
+         { "name": "username",  "type": "string" },
+         { "name": "user_id",   "type": "long" },
+         { "name": "hashtags",  "type": {"type": "array", "items": "string"} }
+   ]
+}
+"""
+
+key_schema_str = """
+{
+   "namespace": "my.test",
+   "name": "key",
+   "type": "record",
+   "fields" : [
+     {
+       "name" : "name",
+       "type" : "string"
+     }
+   ]
+}
+"""
+
+kafka_broker = 'localhost:9092'
+schema_registry = 'http://localhost:8081'
+
+value_schema = avro.loads(value_schema_str)
+key_schema = avro.loads(key_schema_str)
+
+producer = AvroProducer({
+    'bootstrap.servers': kafka_broker,
+    'schema.registry.url': schema_registry
+    }, default_key_schema=key_schema, default_value_schema=value_schema)
 
 
-Create text file source connector
-```
-curl -X POST http://localhost:8083/connectors \
-  -H 'Content-Type:application/json' \
-  -H 'Accept:application/json' \
-  -d @connectors/connect.source.file.tweets.json
-```
+module = sys.modules["twint.storage.write"]
+
+def Json(obj, config):
+    tweet = obj.__dict__
+    print(tweet)
+    producer.produce(topic='tweets10', value=tweet, key={"name": "Key"})
+    producer.flush()
+
+module.Json = Json
+
+c = twint.Config()
+c.Search = "neo4j OR \"graph database\" OR \"graph databases\" OR graphdb OR graphconnect OR @neoquestions OR @Neo4jDE OR @Neo4jFr OR neotechnology"
+c.Store_json = True
+c.Custom["user"] = ["id", "tweet", "user_id", "username", "hashtags", "mentions"]
+c.User_full = True
+c.Output = "tweets.json"
+c.Since = "2019-05-20"
+c.Hide_output = True
+
+twint.run.Search(c)
+----
 
 
-Create Neo4j sink connector
-```
-curl -X POST http://localhost:8083/connectors \
-  -H 'Content-Type:application/json' \
-  -H 'Accept:application/json' \
-  -d @connectors/connect.sink.string-json.neo4j.json
-```
-
-Delete connector
-
-```
-curl -X DELETE http://localhost:8083/connectors/Neo4jSinkConnectorJSON   -H 'Content-Type:application/json'   -H 'Accept:application/json'
-curl -X DELETE http://localhost:8083/connectors/connect.source.file.tweets   -H 'Content-Type:application/json'   -H 'Accept:application/json'
-```
-
-```
-CREATE STREAM tweets(id varchar, tweet varchar, hashtags ARRAY<varchar>, date varchar, username varchar, name varchar)
-WITH(KAFKA_TOPIC='tweets', value_format='json');
-```
-
-```
-curl -i -X POST -H "Accept:application/json" \
-    -H  "Content-Type:application/json" http://localhost:8083/connectors/ \
-    -d '{
-      "name": "tweets6",
-      "config": {
-        "connector.class": "org.apache.kafka.connect.file.FileStreamSourceConnector",
-        "tasks.max": "1",
-        "file": "/tmp/docker-connect/tweets.json",
-        "topic": "tweets6",
-        "value.converter": "org.apache.kafka.connect.storage.StringConverter",
-        "value.converter.schemas.enable": "true"
-        }
-    }'
-```
-
-
-```
-kafkacat -b localhost:9092 -t tweets6 -C
-```
-
-```
-curl -i -X POST http://localhost:8083/connectors \
-  -H 'Content-Type:application/json' \
-  -H 'Accept:application/json' \
-  -d @connectors/connect.sink.string-string.neo4j.json
-```
-
-File -> Kafka -> Neo4j
-
-```
-curl -i -X POST -H "Accept:application/json" \
-    -H  "Content-Type:application/json" http://localhost:8083/connectors/ \
-    -d '{
-      "name": "connect.source.file.tweets",
-      "config": {
-        "connector.class": "org.apache.kafka.connect.file.FileStreamSourceConnector",
-        "tasks.max": "1",
-        "file": "/tmp/docker-connect/tweets.json",
-        "topic": "tweets8",
-        "value.converter": "org.apache.kafka.connect.storage.StringConverter",
-        "value.converter.schemas.enable": "true"
-        }
-    }'
-```
-
-
-```
-kafkacat -b localhost:9092 -t tweets7 -C
-```
-
-```
-curl -i -X POST -H "Accept:application/json" \
-    -H  "Content-Type:application/json" http://localhost:8083/connectors/ \
-    -d '{
-      "name": "connect.sink.neo4j.tweets",
-      "config": {
-        "key.converter": "org.apache.kafka.connect.storage.StringConverter",
-        "value.converter": "org.apache.kafka.connect.json.JsonConverter",
-        "value.converter.schemas.enable": false,
-        "topics": "tweets7",
-        "connector.class": "streams.kafka.connect.sink.Neo4jSinkConnector",
-        "neo4j.server.uri": "bolt://neo4j:7687",
-        "neo4j.authentication.basic.username": "neo4j",
-        "neo4j.authentication.basic.password": "neo",
-        "neo4j.topic.cypher.tweets7": "WITH event AS data MERGE (t:Tweet {id: data.id}) SET t.text = data.tweet, t.createdAt = datetime({epochmillis:data.created_at}) MERGE (u:User {username: data.username}) SET u.id = data.user_id MERGE (u)-[:POSTED]->(t)"
-      }
-    }'
-```
-
-
-```
-curl -i -X POST -H "Accept:application/json" \
-    -H  "Content-Type:application/json" http://localhost:8083/connectors/ \
-    -d '{
-      "name": "connect.sink.neo4j.tweets",
-      "config": {
-        "key.converter": "org.apache.kafka.connect.storage.StringConverter",
-        "value.converter": "org.apache.kafka.connect.json.JsonConverter",
-        "value.converter.schemas.enable": false,
-        "topics": "tweets9",
-        "connector.class": "streams.kafka.connect.sink.Neo4jSinkConnector",
-        "neo4j.server.uri": "bolt://neo4j:7687",
-        "neo4j.authentication.basic.username": "neo4j",
-        "neo4j.authentication.basic.password": "neo",
-        "neo4j.topic.cypher.tweets9": "WITH event AS data MERGE (t:Tweet {id: data.id}) SET t.text = data.tweet, t.createdAt = datetime({epochmillis:data.datetime}) MERGE (u:User {username: data.username}) SET u.id = data.user_id   MERGE (u)-[:POSTED]->(t) FOREACH (ht IN data.hashtags | MERGE (hashtag:HashTag {value: ht}) MERGE (t)-[:HAS_HASHTAG]->(hashtag))"
-      }
-    }'
-```
-
-
-curl -X DELETE http://localhost:8081/subjects/tweets10-value
+== Create Neo4j Sink Connector
 
 ```
 curl -i -X POST -H "Accept:application/json" \
