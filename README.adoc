@@ -111,3 +111,14 @@ curl -i -X POST -H "Accept:application/json" \
       }
     }'
 ```
+
+== Browse Data in Neo4j
+
+Navigate to `http://localhost:7474` and paste the following into the query pane:
+
+[source, cypher]
+----
+MATCH path = (u:User)-[:POSTED]->(t:Tweet)-[:HAS_HASHTAG]->(ht)
+RETURN path
+LIMIT 100
+---
