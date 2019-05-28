@@ -122,3 +122,6 @@ MATCH path = (u:User)-[:POSTED]->(t:Tweet)-[:HAS_HASHTAG]->(ht)
 RETURN path
 LIMIT 100
 ---
+
+
+image::graph.png[]
