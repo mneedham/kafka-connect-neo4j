@@ -1,9 +1,12 @@
 = Kafka Connect - Neo4j
 
+This repository shows how to load Tweets from the twint library into Kafka, and then from Kafka into Neo4j using the Kafka Connect Sink.
+
 == Launch Kafka Cluster + Neo4j
 
 [source, bash]
 ----
+git clone git@github.com:mneedham/kafka-connect-neo4j.git && cd kafka-connect-neo4j
 docker-compose up
 ----
 
