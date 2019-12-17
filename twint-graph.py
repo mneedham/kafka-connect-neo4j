@@ -1,6 +1,7 @@
 import twint
 import sys
 import json
+import os
 
 from confluent_kafka import avro
 from confluent_kafka.avro import AvroProducer
@@ -58,6 +59,7 @@ def Json(obj, config):
 module.Json = Json
 
 c = twint.Config()
+# use environement variables instead
 c.Search = "neo4j OR \"graph database\" OR \"graph databases\" OR graphdb OR graphconnect OR @neoquestions OR @Neo4jDE OR @Neo4jFr OR neotechnology"
 c.Store_json = True
 c.Custom["user"] = ["id", "tweet", "user_id", "username", "hashtags", "mentions"]

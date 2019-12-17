@@ -11,6 +11,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    environment:
+      TWINT_SEARCH: ${TWINT_SEARCH}
+      TWINT_OUTPUT: ${TWINT_OUTPUT}
+      TWINT_SINCE: ${TWINT_SINCE}
+      TWINT_HIDE_OUTPUT: ${TWINT_HIDE_OUTPUT}
 
   neo4j:
     image: neo4j:3.4.10
