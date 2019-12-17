@@ -1,16 +1,42 @@
-version: '3'
-
+---
+version: '3.7'
 services:
+
+  twint:
+    image: x0rzkov/twint:alpine3.10-v2.1.10
+    build:
+      context: .docker/twint
+      dockerfile: Dockerfile
+
+  twint-graph:
+    image: x0rzkov/twint-graph:alpine3.10
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # container_name: twint-graph
+    depends_on:
+    - zookeeper
+    - broker
+    - schema_registry
+    links:
+    - broker
+    - schema_registry
+    environment:
+      TWINT_SEARCH: ${TWINT_SEARCH}
+      TWINT_OUTPUT: ${TWINT_OUTPUT}
+      TWINT_SINCE: ${TWINT_SINCE}
+      TWINT_HIDE_OUTPUT: ${TWINT_HIDE_OUTPUT}
+
   neo4j:
     image: neo4j:3.4.10
     hostname: neo4j
     container_name: neo4j-kc
     depends_on:
-      - zookeeper
-      - broker
+    - zookeeper
+    - broker
     ports:
-      - 7474:7474
-      - 7687:7687
+    - 7474:7474
+    - 7687:7687
     environment:
       NEO4J_AUTH: "neo4j/neo"
       NEO4J_dbms_memory_heap_max__size: 8G
@@ -22,28 +48,30 @@ services:
       NEO4J_streams_source_topic_nodes_users: User{*}
       NEO4J_dbms_logs_debug_level: DEBUG
     volumes:
-      - ./neo4j/plugins:/plugins
-      - ./neo4j/data:/data
+    - ./neo4j/plugins:/plugins
+    - neo4j-data:/data
+
   zookeeper:
     image: confluentinc/cp-zookeeper
     hostname: zookeeper
     container_name: zookeeper-kc
     ports:
-      - "2181:2181"
+    - "2181:2181"
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
     volumes:
-      - ./zookeeper/data:/var/lib/zookeeper/data
-      - ./zookeeper/logs:/var/lib/zookeeper/log
+    - zookeeper-data:/var/lib/zookeeper/data
+    - ./shared/zookeeper/logs:/var/lib/zookeeper/log
+
   broker:
     image: confluentinc/cp-enterprise-kafka
     hostname: broker
     container_name: broker-kc
     depends_on:
-      - zookeeper
+    - zookeeper
     ports:
-      - "9092:9092"
+    - "9092:9092"
     expose:
     - "9093"
     environment:
@@ -63,8 +91,9 @@ services:
       CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
       KAFKA_DELETE_TOPIC_ENABLE: 'true'
     volumes:
-      - ./kafka/data:/var/lib/kafka/data
-      - ./kafka/logs:/var/lib/kafka/log
+    - kafka-data:/var/lib/kafka/data
+    - ./kafka/logs:/var/lib/kafka/log
+
   ksql-server:
     container_name: ksql-server-kc
     image: "confluentinc/cp-ksql-server:5.2.1"
@@ -73,6 +102,7 @@ services:
     environment:
       KSQL_BOOTSTRAP_SERVERS: broker:9093
       KSQL_LISTENERS: http://0.0.0.0:8088
+
   schema_registry:
     image: confluentinc/cp-schema-registry
     hostname: schema_registry
@@ -98,7 +128,7 @@ services:
     - "8083:8083"
     volumes:
     - ./plugins:/tmp/connect-plugins
-    - ./data:/tmp/docker-connect
+    - connect-data:/tmp/docker-connect
     environment:
       CONNECT_BOOTSTRAP_SERVERS: 'broker:9093'
       CONNECT_REST_ADVERTISED_HOST_NAME: connect
@@ -141,3 +171,9 @@ services:
       CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
       CONFLUENT_METRICS_TOPIC_REPLICATION: 1
       PORT: 9021
+
+volumes:
+  neo4j-data:
+  zookeeper-data:
+  kafka-data:
+  connect-data:
