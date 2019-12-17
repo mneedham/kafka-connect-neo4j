@@ -60,12 +60,16 @@ module.Json = Json
 
 c = twint.Config()
 # use environement variables instead
-c.Search = "neo4j OR \"graph database\" OR \"graph databases\" OR graphdb OR graphconnect OR @neoquestions OR @Neo4jDE OR @Neo4jFr OR neotechnology"
+# TWINT_SEARCH
+c.Search = os.getenv('TWINT_SEARCH') 
 c.Store_json = True
 c.Custom["user"] = ["id", "tweet", "user_id", "username", "hashtags", "mentions"]
 c.User_full = True
-c.Output = "tweets.json"
-c.Since = "2019-05-20"
-c.Hide_output = True
+# TWINT_OUTPUT
+c.Output = os.getenv('TWINT_OUTPUT')
+# TWINT_SINCE
+c.Since = os.getenv('TWINT_SINCE') 
+# TWINT_HIDE_OUTPUT
+c.Hide_output = os.getenv('TWINT_HIDE_OUTPUT')
 
 twint.run.Search(c)

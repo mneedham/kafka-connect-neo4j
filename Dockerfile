@@ -1,4 +1,4 @@
-FROM twint:alpine
+FROM x0rzkov/twint:v2.1.10-alpine3.10
 
 MAINTAINER x0rzkov@protonmail.com
 
